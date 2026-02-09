@@ -53,11 +53,26 @@ export default function ResumeOptimizer() {
         '<span class="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">$4</span>' +
       '</div>');
 
+    // 特殊处理项目经验头部：**项目名称** | 角色 | 时间段
+    html = html.replace(/^\*\*([^\*|]+)\*\*\s*\|\s*([^\|]+)\s*\|\s*(.+)$/gm, 
+      '<div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">' +
+        '<span class="flex-1 text-lg font-bold text-gray-900 dark:text-white">$1</span>' +
+        '<span class="px-3 py-1 mx-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm rounded-full">$2</span>' +
+        '<span class="text-sm text-gray-600 dark:text-gray-400 font-mono">$3</span>' +
+      '</div>');
+
+    // 特殊处理专业技能：**技能类别**：具体技能
+    html = html.replace(/^\*\*([^\*:]+)\*\*：(.+)$/gm, 
+      '<div class="flex items-start mb-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">' +
+        '<span class="font-bold text-purple-700 dark:text-purple-300 min-w-[120px]">$1</span>' +
+        '<span class="flex-1 text-gray-700 dark:text-gray-300 ml-2">$2</span>' +
+      '</div>');
+
     // 转换列表项 (- xxx)
-    html = html.replace(/^-\s+(.+)$/gm, '<li class="ml-6 text-gray-700 dark:text-gray-300 mb-1 leading-relaxed">$1</li>');
+    html = html.replace(/^-\s+(.+)$/gm, '<li class="ml-6 text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">$1</li>');
 
     // 转换多行列表项为列表
-    html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4 space-y-1">$&</ul>');
+    html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4 space-y-2">$&</ul>');
 
     // 转换冒号分隔的个人信息行（姓名：xxx）
     html = html.replace(/^([^\n]+)：(.+)$/gm, 
