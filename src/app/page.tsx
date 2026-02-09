@@ -53,14 +53,6 @@ export default function ResumeOptimizer() {
         '<span class="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">$4</span>' +
       '</div>');
 
-    // 特殊处理项目经验头部：**项目名称** | 角色 | 时间段
-    html = html.replace(/^\*\*([^\*|]+)\*\*\s*\|\s*([^\|]+)\s*\|\s*(.+)$/gm, 
-      '<div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">' +
-        '<span class="flex-1 text-lg font-bold text-gray-900 dark:text-white">$1</span>' +
-        '<span class="px-3 py-1 mx-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm rounded-full">$2</span>' +
-        '<span class="text-sm text-gray-600 dark:text-gray-400 font-mono">$3</span>' +
-      '</div>');
-
     // 特殊处理专业技能：**技能类别**：具体技能
     html = html.replace(/^\*\*([^\*:]+)\*\*：(.+)$/gm, 
       '<div class="flex items-start mb-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">' +
