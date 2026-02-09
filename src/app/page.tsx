@@ -32,22 +32,52 @@ export default function ResumeOptimizer() {
 
   // 解析简历内容为HTML
   const parseResumeToHTML = (resume: string) => {
-    return resume
-      // 转换一级标题 (## 一、xxx)
-      .replace(/^##\s+(.+)$/gm, '<h3 class="text-xl font-bold mt-6 mb-3 text-gray-900 dark:text-white border-b border-gray-300 pb-2">$1</h3>')
-      // 转换二级标题 (### xxx)
-      .replace(/^###\s+(.+)$/gm, '<h4 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">$1</h4>')
-      // 转换列表项 (- xxx)
-      .replace(/^-\s+(.+)$/gm, '<li class="ml-6 text-gray-700 dark:text-gray-300 mb-1">$1</li>')
-      // 转换多行列表项为列表
-      .replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4">$&</ul>')
-      // 转换粗体 (**xxx**)
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-      // 转换换行为段落
-      .replace(/\n\n+/g, '</p><p class="mb-3 text-gray-700 dark:text-gray-300">')
-      // 包裹整个内容
-      .replace(/^(?!<)/, '<p class="mb-3 text-gray-700 dark:text-gray-300">')
-      .replace(/(?<!>)$/, '</p>');
+    let html = resume;
+
+    // 转换一级标题 (## 一、xxx)
+    html = html.replace(/^##\s+(.+)$/gm, '<h3 class="text-xl font-bold mt-6 mb-4 text-gray-900 dark:text-white border-b-2 border-gray-300 pb-2">$1</h3>');
+
+    // 转换二级标题 (### xxx)
+    html = html.replace(/^###\s+(.+)$/gm, '<h4 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">$1</h4>');
+
+    // 转换粗体 (**xxx**) - 优先处理，避免被其他规则影响
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>');
+
+    // 特殊处理教育背景格式：[时间段] [学校] [学历] [专业]
+    // 格式：2015.03-2018.03	中央财经大学   西方经济学  硕士
+    html = html.replace(/^(\d{4}\.\d{2}-\d{4}\.\d{2})\s+(.+?)\s+(.+?)\s+(.+?)$/gm, 
+      '<div class="flex items-baseline justify-between mb-3 py-2 bg-gray-50 dark:bg-gray-900/50 px-4 rounded-lg">' +
+        '<span class="text-gray-600 dark:text-gray-400 font-mono">$1</span>' +
+        '<span class="flex-1 mx-4 text-center font-semibold text-gray-900 dark:text-white">$2</span>' +
+        '<span class="text-gray-700 dark:text-gray-300">$3</span>' +
+        '<span class="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">$4</span>' +
+      '</div>');
+
+    // 转换列表项 (- xxx)
+    html = html.replace(/^-\s+(.+)$/gm, '<li class="ml-6 text-gray-700 dark:text-gray-300 mb-1 leading-relaxed">$1</li>');
+
+    // 转换多行列表项为列表
+    html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4 space-y-1">$&</ul>');
+
+    // 转换冒号分隔的个人信息行（姓名：xxx）
+    html = html.replace(/^([^\n]+)：(.+)$/gm, 
+      '<div class="flex items-center mb-2">' +
+        '<span class="w-24 font-semibold text-gray-900 dark:text-white">$1：</span>' +
+        '<span class="flex-1 text-gray-700 dark:text-gray-300">$2</span>' +
+      '</div>');
+
+    // 转换换行为段落（处理剩余文本）
+    html = html.replace(/\n\n+/g, '</p><p class="mb-3 text-gray-700 dark:text-gray-300 leading-relaxed">');
+
+    // 包裹整个内容
+    if (!html.startsWith('<')) {
+      html = '<p class="mb-3 text-gray-700 dark:text-gray-300 leading-relaxed">' + html;
+    }
+    if (!html.endsWith('</p>') && !html.endsWith('</div>') && !html.endsWith('</h3>') && !html.endsWith('</h4>') && !html.endsWith('</ul>')) {
+      html += '</p>';
+    }
+
+    return html;
   };
 
   const handleOptimize = async () => {
@@ -368,8 +398,10 @@ ${editedResume}
                             💡 提示：您可以直接编辑简历内容，修改后点击导出即可使用
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            • 简历包含：个人信息、求职意向、教育背景、工作经历、项目经验、专业技能、自我评价<br/>
-                            • 保持原有结构格式，使用 ## 标题区分不同模块<br/>
+                            • 简历包含：个人信息、教育背景、工作经历、项目经验、专业技能、自我评价<br/>
+                            • 个人信息使用"字段："格式分行显示<br/>
+                            • 教育背景格式：时间段 学校 学历 专业<br/>
+                            • 工作经历的公司、职位、时间会自动加粗<br/>
                             • 可自由修改和补充内容
                           </p>
                         </div>
