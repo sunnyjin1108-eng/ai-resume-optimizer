@@ -23,6 +23,7 @@ export default function ResumeOptimizer() {
   const [companyName, setCompanyName] = useState('');
   const [jobPosition, setJobPosition] = useState('');
   const [jobRequirements, setJobRequirements] = useState('');
+  const [hrCommunicationNotes, setHrCommunicationNotes] = useState('');
   const [optimizedResume, setOptimizedResume] = useState('');
   const [recommendReason, setRecommendReason] = useState('');
   const [riskTips, setRiskTips] = useState('');
@@ -201,6 +202,7 @@ export default function ResumeOptimizer() {
           companyName,
           jobPosition,
           jobRequirements,
+          hrCommunicationNotes,
           companyInfo: companyData,
         }),
       });
@@ -612,6 +614,17 @@ ${editedResume}
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="hr-communication-notes">HR沟通记录（选填）</Label>
+                <Textarea
+                  id="hr-communication-notes"
+                  placeholder="请输入与候选人沟通的记录，例如：候选人期望薪资20-25k，当前在北京，能接受出差，对技术团队规模有要求..."
+                  className="min-h-[100px] resize-none"
+                  value={hrCommunicationNotes}
+                  onChange={(e) => setHrCommunicationNotes(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="resume">简历内容</Label>
                 <Textarea
                   id="resume"
@@ -738,13 +751,13 @@ ${editedResume}
                           </div>
                         </div>
 
-                        {/* 推荐原因（优劣势分析） */}
+                        {/* 推荐原因 */}
                         {recommendReason && (
                           <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
                             <div className="mb-2 flex items-center gap-2">
                               <Sparkles className="h-4 w-4 text-blue-600" />
                               <span className="font-semibold text-blue-900 dark:text-blue-100">
-                                推荐原因（优劣势分析）
+                                推荐原因
                               </span>
                             </div>
                             <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">

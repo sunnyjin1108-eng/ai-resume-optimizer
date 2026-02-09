@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 
 export async function POST(request: NextRequest) {
-  const { resume, companyName, jobPosition, jobRequirements, companyInfo } = await request.json();
+  const { resume, companyName, jobPosition, jobRequirements, hrCommunicationNotes, companyInfo } = await request.json();
 
   if (!resume || !companyName || !jobPosition) {
     return new Response(
@@ -18,28 +18,22 @@ export async function POST(request: NextRequest) {
   const config = new Config();
   const llmClient = new LLMClient(config);
 
-  // 第一步：生成推荐原因（优劣势分析）
-  const recommendPrompt = `你是一位专业的HR专家。请基于以下岗位需求和人才画像，分析简历与目标职位的匹配度，提炼出候选人的优势和劣势。
+  // 第一步：生成推荐原因
+  const recommendPrompt = `你是一位专业的HR专家。请基于以下岗位需求、人才画像和HR沟通记录，分析简历与目标职位的匹配度，提炼出候选人的核心优势。
 
 目标公司：${companyName}
 应聘职位：${jobPosition}
 ${companyInfo?.description ? `公司简介：${companyInfo.description}` : ''}
 ${jobRequirements ? `岗位需求/人才画像：\n${jobRequirements}` : ''}
+${hrCommunicationNotes ? `HR沟通记录：\n${hrCommunicationNotes}` : ''}
 
 简历内容：
 ${resume}
 
-请按照以下格式输出推荐原因（包含优势和劣势分析，每条50字以内，简洁有力）：
-
-**优势：**
+请按照以下格式输出推荐原因（仅包含优势，3-5条，每条50字以内，简洁有力）：
 1. [优势1]
 2. [优势2]
 3. [优势3]
-
-**劣势/风险：**
-1. [劣势1]
-2. [劣势2]
-3. [劣势3]
 
 请直接输出推荐原因，不要包含其他说明。`;
 
@@ -125,12 +119,13 @@ ${jobRequirements ? `岗位需求/人才画像：\n${jobRequirements}` : ''}
     { role: 'user' as const, content: resume },
   ];
 
-  // 第三步：生成风险提示（基于岗位需求）
-  const riskPrompt = `你是一位专业的HR专家。请基于以下岗位需求和人才画像，分析简历中可能存在的风险点或与岗位要求不符的地方。
+  // 第三步：生成风险提示（基于岗位需求和HR沟通记录）
+  const riskPrompt = `你是一位专业的HR专家。请基于以下岗位需求、人才画像和HR沟通记录，分析简历中可能存在的风险点或与岗位要求不符的地方。
 
 目标公司：${companyName}
 应聘职位：${jobPosition}
 ${jobRequirements ? `岗位需求/人才画像：\n${jobRequirements}` : ''}
+${hrCommunicationNotes ? `HR沟通记录：\n${hrCommunicationNotes}` : ''}
 
 简历内容：
 ${resume}
@@ -144,16 +139,17 @@ ${resume}
 请直接输出风险提示，不要包含其他说明。`;
 
   const riskMessages = [
-    { role: 'system' as const, content: '你是专业的HR专家，善于识别简历中的风险点，并评估候选人是否符合岗位要求。' },
+    { role: 'system' as const, content: '你是专业的HR专家，善于识别简历中的风险点，并评估候选人是否符合岗位要求，结合HR沟通记录进行综合分析。' },
     { role: 'user' as const, content: riskPrompt },
   ];
 
-  // 第四步：生成面试提问建议（基于岗位需求）
-  const interviewPrompt = `你是一位专业的HR专家。请基于以下岗位需求和人才画像，为面试官提供针对性的面试提问建议，帮助验证候选人的能力和匹配度。
+  // 第四步：生成面试提问建议（基于岗位需求和HR沟通记录）
+  const interviewPrompt = `你是一位专业的HR专家。请基于以下岗位需求、人才画像和HR沟通记录，为面试官提供针对性的面试提问建议，帮助验证候选人的能力和匹配度。
 
 目标公司：${companyName}
 应聘职位：${jobPosition}
 ${jobRequirements ? `岗位需求/人才画像：\n${jobRequirements}` : ''}
+${hrCommunicationNotes ? `HR沟通记录：\n${hrCommunicationNotes}` : ''}
 
 简历内容：
 ${resume}
@@ -167,7 +163,7 @@ ${resume}
 请直接输出面试提问建议，不要包含其他说明。`;
 
   const interviewMessages = [
-    { role: 'system' as const, content: '你是专业的HR专家，善于设计有针对性的面试问题。' },
+    { role: 'system' as const, content: '你是专业的HR专家，善于设计有针对性的面试问题，结合HR沟通记录制定面试策略。' },
     { role: 'user' as const, content: interviewPrompt },
   ];
 
