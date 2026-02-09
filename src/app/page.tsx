@@ -41,12 +41,9 @@ export default function ResumeOptimizer() {
     // 转换二级标题 (### xxx)
     html = html.replace(/^###\s+(.+)$/gm, '<h4 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">$1</h4>');
 
-    // 转换粗体 (**xxx**) - 优先处理，避免被其他规则影响
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>');
-
     // 特殊处理教育背景格式：[时间段] [学校] [学历] [专业]
     // 格式：2015.03-2018.03	中央财经大学   西方经济学  硕士
-    html = html.replace(/^(\d{4}\.\d{2}-\d{4}\.\d{2})\s+(.+?)\s+(.+?)\s+(.+?)$/gm, 
+    html = html.replace(/^(\d{4}\.\d{2}-\d{4}\.\d{2})\s+(.+?)\s+(.+?)\s+(.+?)$/gm,
       '<div class="flex items-baseline justify-between mb-3 py-2 bg-gray-50 dark:bg-gray-900/50 px-4 rounded-lg">' +
         '<span class="text-gray-600 dark:text-gray-400 font-mono">$1</span>' +
         '<span class="flex-1 mx-4 text-center font-semibold text-gray-900 dark:text-white">$2</span>' +
@@ -55,21 +52,28 @@ export default function ResumeOptimizer() {
       '</div>');
 
     // 特殊处理项目经验头部：**[项目名称]** | **[时间段]**
-    html = html.replace(/^\*\*([^\*|]+)\*\*\s*\|\s*\*\*([^\*]+)\*\*$/gm, 
+    html = html.replace(/^\*\*([^\*|]+)\*\*\s*\|\s*\*\*([^\*]+)\*\*$/gm,
       '<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200 dark:border-gray-700">' +
         '<span class="text-lg font-bold text-gray-900 dark:text-white">$1</span>' +
         '<span class="text-sm font-semibold text-gray-600 dark:text-gray-400 font-mono">$2</span>' +
       '</div>');
 
-    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）- 支持多行内容，保持原样，使用空行分隔
-    html = html.replace(/^(项目描述|主要贡献|项目成果)：([\s\S]*?)(?=\n(?:项目描述|主要贡献|项目成果)：|\n##|\n\*\*|$)/gm, 
-      '<div class="flex items-start mb-4">' +
-        '<span class="w-24 flex-shrink-0 font-semibold text-gray-700 dark:text-gray-300">$1：</span>' +
-        '<span class="flex-1 text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap">$2</span>' +
-      '</div>');
+    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）
+    // 使用更健壮的正则表达式，匹配到下一个标注或章节标题
+    html = html.replace(/^(项目描述|主要贡献|项目成果)：([^\n]*(?:\n(?!项目描述|主要贡献|项目成果|\n##|-\s|\*\*|[^\n]+：)[^\n]*)*)/gm,
+      (match, label, content) => {
+        const trimmedContent = content.trim();
+        return '<div class="flex items-start mb-3">' +
+          '<span class="w-24 flex-shrink-0 font-semibold text-gray-700 dark:text-gray-300">' + label + '：</span>' +
+          '<div class="flex-1 text-gray-900 dark:text-white leading-relaxed">' + trimmedContent + '</div>' +
+        '</div>';
+      });
+
+    // 转换粗体 (**xxx**) - 在处理完特殊格式后再处理
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>');
 
     // 特殊处理专业技能：**技能类别**：具体技能
-    html = html.replace(/^\*\*([^\*:]+)\*\*：(.+)$/gm, 
+    html = html.replace(/^\*\*([^\*:]+)\*\*：(.+)$/gm,
       '<div class="flex items-start mb-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">' +
         '<span class="font-bold text-purple-700 dark:text-purple-300 min-w-[120px]">$1</span>' +
         '<span class="flex-1 text-gray-700 dark:text-gray-300 ml-2">$2</span>' +
@@ -81,8 +85,8 @@ export default function ResumeOptimizer() {
     // 转换多行列表项为列表
     html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4 space-y-2">$&</ul>');
 
-    // 转换冒号分隔的个人信息行（姓名：xxx）- 排除项目经验标注
-    html = html.replace(/^((?!项目描述|主要贡献|项目成果)[^\n]+)：(.+)$/gm, 
+    // 转换冒号分隔的个人信息行（姓名：xxx）- 排除项目经验标注和已处理的格式
+    html = html.replace(/^((?!项目描述|主要贡献|项目成果|\d{4}\.\d{2}-\d{4}\.\d{2}|-\s|\*\*|\s{2,})[^\n]+)：(.+)$/gm,
       '<div class="flex items-center mb-2">' +
         '<span class="w-24 font-semibold text-gray-900 dark:text-white">$1：</span>' +
         '<span class="flex-1 text-gray-700 dark:text-gray-300">$2</span>' +
