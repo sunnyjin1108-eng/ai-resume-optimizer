@@ -22,6 +22,7 @@ export default function ResumeOptimizer() {
   const [resume, setResume] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [jobPosition, setJobPosition] = useState('');
+  const [jobRequirements, setJobRequirements] = useState('');
   const [optimizedResume, setOptimizedResume] = useState('');
   const [recommendReason, setRecommendReason] = useState('');
   const [riskTips, setRiskTips] = useState('');
@@ -167,6 +168,8 @@ export default function ResumeOptimizer() {
     setIsOptimizing(true);
     setOptimizedResume('');
     setRecommendReason('');
+    setRiskTips('');
+    setInterviewQuestions('');
 
     try {
       // 先获取公司信息（失败也不影响流程）
@@ -197,6 +200,7 @@ export default function ResumeOptimizer() {
           resume,
           companyName,
           jobPosition,
+          jobRequirements,
           companyInfo: companyData,
         }),
       });
@@ -541,6 +545,17 @@ ${editedResume}
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="job-requirements">岗位需求/人才画像（选填）</Label>
+                <Textarea
+                  id="job-requirements"
+                  placeholder="请输入岗位需求或理想人才画像，例如：要求3年以上React开发经验，熟悉TypeScript，有大型项目经验，具备良好的沟通能力..."
+                  className="min-h-[100px] resize-none"
+                  value={jobRequirements}
+                  onChange={(e) => setJobRequirements(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="resume">简历内容</Label>
                 <Textarea
                   id="resume"
@@ -667,13 +682,13 @@ ${editedResume}
                           </div>
                         </div>
 
-                        {/* AI推荐理由 */}
+                        {/* 推荐原因（优劣势分析） */}
                         {recommendReason && (
                           <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
                             <div className="mb-2 flex items-center gap-2">
                               <Sparkles className="h-4 w-4 text-blue-600" />
                               <span className="font-semibold text-blue-900 dark:text-blue-100">
-                                AI 推荐理由
+                                推荐原因（优劣势分析）
                               </span>
                             </div>
                             <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
