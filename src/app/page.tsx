@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -205,55 +206,148 @@ export default function ResumeOptimizer() {
   };
 
   const exportToImage = async () => {
-    const element = document.getElementById('resume-preview');
-    if (!element) return;
+    try {
+      const element = document.getElementById('resume-preview');
+      if (!element) {
+        toast.error('未找到简历预览内容');
+        return;
+      }
 
-    const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(element, { scale: 2 });
-    const link = document.createElement('a');
-    link.download = `resume_${companyName}_优化版.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+      toast.loading('正在生成图片，请稍候...');
+
+      const html2canvas = (await import('html2canvas')).default;
+
+      // 滚动到顶部以确保完整截图
+      window.scrollTo(0, 0);
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const link = document.createElement('a');
+      link.download = `resume_${companyName}_优化版.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+
+      toast.success('图片导出成功！');
+    } catch (error) {
+      console.error('图片导出失败:', error);
+      toast.error(`图片导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
   };
 
   const exportToPDF = async () => {
-    const element = document.getElementById('resume-preview');
-    if (!element) return;
+    try {
+      const element = document.getElementById('resume-preview');
+      if (!element) {
+        toast.error('未找到简历预览内容');
+        return;
+      }
 
-    const html2canvas = (await import('html2canvas')).default;
-    const jsPDF = (await import('jspdf')).jsPDF;
+      // 显示加载提示
+      toast.loading('正在生成 PDF，请稍候...');
 
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`resume_${companyName}_优化版.pdf`);
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      // 滚动到顶部以确保完整截图
+      window.scrollTo(0, 0);
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`resume_${companyName}_优化版.pdf`);
+
+      toast.success('PDF 导出成功！');
+    } catch (error) {
+      console.error('PDF 导出失败:', error);
+      toast.error(`PDF 导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
   };
 
   const exportToWord = async () => {
-    const element = document.getElementById('resume-preview');
-    if (!element) return;
+    try {
+      const element = document.getElementById('resume-preview');
+      if (!element) {
+        toast.error('未找到简历预览内容');
+        return;
+      }
 
-    const htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-      <head><meta charset='utf-8'><title>简历</title></head>
-      <body>
-        ${element.innerHTML}
-      </body>
-      </html>
-    `;
+      toast.loading('正在生成 Word 文档，请稍候...');
 
-    const blob = new Blob(['\ufeff', htmlContent], {
-      type: 'application/msword',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `resume_${companyName}_优化版.doc`;
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
+      // 提取内联样式和内容
+      const style = document.createElement('style');
+      style.textContent = `
+        body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; margin: 20px; }
+        .text-sm { font-size: 12px; }
+        .text-base { font-size: 14px; }
+        .font-bold { font-weight: bold; }
+        .font-semibold { font-weight: 600; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mt-4 { margin-top: 16px; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-500 { color: #6b7280; }
+        .border-b { border-bottom: 1px solid #e5e7eb; }
+        .border-t { border-top: 1px solid #e5e7eb; }
+        .py-2 { padding-top: 8px; padding-bottom: 8px; }
+        .py-3 { padding-top: 12px; padding-bottom: 12px; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .gap-2 { gap: 8px; }
+        .w-1\\/2 { width: 50%; }
+        .break-all { word-break: break-all; }
+      `;
+
+      const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+        <head><meta charset='utf-8'><title>简历</title></head>
+        <body>${style.outerHTML}${element.innerHTML}</body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', htmlContent], {
+        type: 'application/msword',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `resume_${companyName}_优化版.doc`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Word 文档导出成功！');
+    } catch (error) {
+      console.error('Word 导出失败:', error);
+      toast.error(`Word 导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
   };
 
   const saveResume = async () => {
@@ -270,7 +364,7 @@ export default function ResumeOptimizer() {
 ${companyInfo ? `目标公司：${companyInfo.name}\n` : ''}应聘职位：${jobPosition}
 
 ${recommendReason ? `\n=== AI 推荐理由 ===\n${recommendReason}\n` : ''}
-${'=' * 50}
+${'='.repeat(50)}
 
 === 优化后的简历 ===
 ${editedResume}
@@ -283,7 +377,6 @@ ${editedResume}
           resume: fullResume,
           companyName,
           jobPosition,
-          selectedTemplate,
         }),
       });
 
