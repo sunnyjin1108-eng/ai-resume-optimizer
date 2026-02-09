@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, Image as ImageIcon, Loader2, Sparkles, Save, Edit2, Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 
 interface CompanyInfo {
@@ -24,36 +25,11 @@ export default function ResumeOptimizer() {
   const [optimizedResume, setOptimizedResume] = useState('');
   const [recommendReason, setRecommendReason] = useState('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState('modern');
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isLoadingCompany, setIsLoadingCompany] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedResume, setEditedResume] = useState('');
-
-  const templates = [
-    {
-      id: 'modern',
-      name: '现代简约',
-      description: '简洁大方，适合科技公司',
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-50 dark:bg-blue-950',
-    },
-    {
-      id: 'classic',
-      name: '经典商务',
-      description: '正式严谨，适合传统行业',
-      color: 'from-gray-700 to-gray-900',
-      bgColor: 'bg-gray-50 dark:bg-gray-950',
-    },
-    {
-      id: 'creative',
-      name: '创意设计',
-      description: '独特个性，适合创意岗位',
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'bg-purple-50 dark:bg-purple-950',
-    },
-  ];
 
   const handleOptimize = async () => {
     if (!resume.trim() || !companyName.trim() || !jobPosition.trim()) {
@@ -332,47 +308,12 @@ ${editedResume}
                 优化预览
               </CardTitle>
               <CardDescription>
-                查看优化后的简历，选择模板并导出
+                查看优化后的简历
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {optimizedResume ? (
                 <>
-                  {/* 模板选择 */}
-                  <div className="space-y-3">
-                    <Label>选择模板</Label>
-                    <div className="grid gap-3 md:grid-cols-3">
-                      {templates.map((template) => (
-                        <button
-                          key={template.id}
-                          onClick={() => setSelectedTemplate(template.id)}
-                          className={`
-                            relative overflow-hidden rounded-lg border-2 p-4 text-left transition-all
-                            ${selectedTemplate === template.id
-                              ? 'border-blue-600 ring-2 ring-blue-600 ring-offset-2'
-                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
-                            }
-                          `}
-                        >
-                          <div className={`mb-2 h-2 rounded bg-gradient-to-r ${template.color}`} />
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {template.name}
-                          </h3>
-                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {template.description}
-                          </p>
-                          {selectedTemplate === template.id && (
-                            <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* 编辑/预览模式切换 */}
                   <div className="flex items-center justify-between border-b pb-3">
                     <Label className="text-base font-semibold">简历内容</Label>
@@ -408,8 +349,8 @@ ${editedResume}
                             💡 提示：您可以直接编辑简历内容，修改后点击导出即可使用
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            • 第一行为职位名称，请保持格式：应聘职位：xxx<br/>
-                            • 推荐原因已在上方固定显示<br/>
+                            • 简历包含：个人信息、求职意向、教育背景、工作经历、项目经验、专业技能、自我评价<br/>
+                            • 保持原有结构格式，使用 ## 标题区分不同模块<br/>
                             • 可自由修改和补充内容
                           </p>
                         </div>
@@ -424,31 +365,35 @@ ${editedResume}
                       /* 预览模式 */
                       <div
                         id="resume-preview"
-                        className={`prose max-w-none dark:prose-invert ${
-                          selectedTemplate === 'modern' ? 'modern-template' : ''
-                        } ${selectedTemplate === 'classic' ? 'classic-template' : ''} ${
-                          selectedTemplate === 'creative' ? 'creative-template' : ''
-                        }`}
+                        className="prose max-w-none dark:prose-invert"
                       >
-                        {/* 页眉：公司名称 */}
-                        {companyInfo && (
-                          <div className="mb-6 flex items-center justify-end border-b-2 pb-4">
-                            <div className="text-xl font-bold text-gray-900 dark:text-white">
-                              {companyInfo.name}
-                            </div>
-                          </div>
-                        )}
+                        {/* 顶部信息区：公司名称和应聘职位 */}
+                        <div className="mb-6 border-b-2 border-gray-300 pb-4">
+                          <div className="flex items-start justify-between">
+                            {/* 左侧：应聘职位 */}
+                            {jobPosition && (
+                              <div>
+                                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                                  应聘职位：{jobPosition}
+                                </div>
+                                {companyInfo && (
+                                  <div className="mt-2 text-lg text-gray-700 dark:text-gray-300">
+                                    {companyInfo.name}
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
-                        {/* 应聘职位 - 左上角第一段 */}
-                        {jobPosition && (
-                          <div className="mb-4">
-                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                              应聘职位：{jobPosition}
-                            </div>
+                            {/* 右侧：公司名称 */}
+                            {companyInfo && (
+                              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                                {companyInfo.name}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
 
-                        {/* 推荐原因 */}
+                        {/* AI推荐理由 */}
                         {recommendReason && (
                           <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
                             <div className="mb-2 flex items-center gap-2">
@@ -464,7 +409,9 @@ ${editedResume}
                         )}
 
                         {/* 优化后的简历内容 */}
-                        <div className="whitespace-pre-wrap">{editedResume}</div>
+                        <div className="prose max-w-none dark:prose-invert">
+                          <ReactMarkdown>{editedResume}</ReactMarkdown>
+                        </div>
                       </div>
                     )}
                   </div>
