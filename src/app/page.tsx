@@ -101,17 +101,33 @@ export default function ResumeOptimizer() {
           const lines = chunk.split('\n');
           for (const line of lines) {
             if (line.startsWith('data: ')) {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === 'stage') {
-                currentStage = data.content;
-              } else if (data.content) {
-                if (currentStage === 'recommend') {
-                  reasonText += data.content;
-                  setRecommendReason(reasonText);
-                } else if (currentStage === 'resume') {
-                  optimizedText += data.content;
-                  setOptimizedResume(optimizedText);
+              const content = line.slice(6).trim();
+
+              // 跳过[DONE]标记
+              if (content === '[DONE]') {
+                continue;
+              }
+
+              // 跳过空行
+              if (!content) {
+                continue;
+              }
+
+              try {
+                const data = JSON.parse(content);
+                if (data.type === 'stage') {
+                  currentStage = data.content;
+                } else if (data.content) {
+                  if (currentStage === 'recommend') {
+                    reasonText += data.content;
+                    setRecommendReason(reasonText);
+                  } else if (currentStage === 'resume') {
+                    optimizedText += data.content;
+                    setOptimizedResume(optimizedText);
+                  }
                 }
+              } catch (parseError) {
+                console.error('JSON parse error:', parseError, 'Content:', content);
               }
             }
           }
