@@ -7,19 +7,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, FileText, Image as ImageIcon, Loader2, Sparkles, Save } from 'lucide-react';
 
 
 interface CompanyInfo {
   name: string;
   logoUrl: string;
+  description?: string;
+  website?: string;
 }
 
 export default function ResumeOptimizer() {
   const [resume, setResume] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [jobPosition, setJobPosition] = useState('');
   const [optimizedResume, setOptimizedResume] = useState('');
+  const [recommendReason, setRecommendReason] = useState('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState('modern');
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -27,18 +30,38 @@ export default function ResumeOptimizer() {
   const [isSaving, setIsSaving] = useState(false);
 
   const templates = [
-    { id: 'modern', name: '现代简约', description: '简洁大方，适合科技公司' },
-    { id: 'classic', name: '经典商务', description: '正式严谨，适合传统行业' },
-    { id: 'creative', name: '创意设计', description: '独特个性，适合创意岗位' },
+    {
+      id: 'modern',
+      name: '现代简约',
+      description: '简洁大方，适合科技公司',
+      color: 'from-blue-500 to-cyan-500',
+      bgColor: 'bg-blue-50 dark:bg-blue-950',
+    },
+    {
+      id: 'classic',
+      name: '经典商务',
+      description: '正式严谨，适合传统行业',
+      color: 'from-gray-700 to-gray-900',
+      bgColor: 'bg-gray-50 dark:bg-gray-950',
+    },
+    {
+      id: 'creative',
+      name: '创意设计',
+      description: '独特个性，适合创意岗位',
+      color: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-purple-50 dark:bg-purple-950',
+    },
   ];
 
   const handleOptimize = async () => {
-    if (!resume.trim() || !companyName.trim()) {
-      alert('请输入简历内容和目标公司名称');
+    if (!resume.trim() || !companyName.trim() || !jobPosition.trim()) {
+      alert('请输入简历内容、目标公司名称和应聘职位');
       return;
     }
 
     setIsOptimizing(true);
+    setOptimizedResume('');
+    setRecommendReason('');
 
     try {
       // 先获取公司信息
@@ -59,6 +82,7 @@ export default function ResumeOptimizer() {
         body: JSON.stringify({
           resume,
           companyName,
+          jobPosition,
           companyInfo: companyData,
         }),
       });
@@ -66,6 +90,8 @@ export default function ResumeOptimizer() {
       const reader = resumeRes.body?.getReader();
       const decoder = new TextDecoder();
       let optimizedText = '';
+      let reasonText = '';
+      let currentStage = 'recommend';
 
       if (reader) {
         while (true) {
@@ -76,9 +102,16 @@ export default function ResumeOptimizer() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                optimizedText += data.content;
-                setOptimizedResume(optimizedText);
+              if (data.type === 'stage') {
+                currentStage = data.content;
+              } else if (data.content) {
+                if (currentStage === 'recommend') {
+                  reasonText += data.content;
+                  setRecommendReason(reasonText);
+                } else if (currentStage === 'resume') {
+                  optimizedText += data.content;
+                  setOptimizedResume(optimizedText);
+                }
               }
             }
           }
@@ -154,12 +187,24 @@ export default function ResumeOptimizer() {
     setIsSaving(true);
 
     try {
+      // 构建完整简历内容
+      const fullResume = `
+${companyInfo ? `目标公司：${companyInfo.name}\n` : ''}应聘职位：${jobPosition}
+
+${recommendReason ? `\n=== AI 推荐理由 ===\n${recommendReason}\n` : ''}
+${'=' * 50}
+
+=== 优化后的简历 ===
+${optimizedResume}
+      `.trim();
+
       const response = await fetch('/api/save-resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          resume: optimizedResume,
+          resume: fullResume,
           companyName,
+          jobPosition,
           selectedTemplate,
         }),
       });
@@ -215,6 +260,16 @@ export default function ResumeOptimizer() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="job-position">应聘职位</Label>
+                <Input
+                  id="job-position"
+                  placeholder="例如：前端工程师、产品经理、数据分析师..."
+                  value={jobPosition}
+                  onChange={(e) => setJobPosition(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="resume">简历内容</Label>
                 <Textarea
                   id="resume"
@@ -261,32 +316,38 @@ export default function ResumeOptimizer() {
               {optimizedResume ? (
                 <>
                   {/* 模板选择 */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>选择模板</Label>
-                    <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                      <TabsList className="grid w-full grid-cols-3">
-                        {templates.map((template) => (
-                          <TabsTrigger key={template.id} value={template.id}>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {templates.map((template) => (
+                        <button
+                          key={template.id}
+                          onClick={() => setSelectedTemplate(template.id)}
+                          className={`
+                            relative overflow-hidden rounded-lg border-2 p-4 text-left transition-all
+                            ${selectedTemplate === template.id
+                              ? 'border-blue-600 ring-2 ring-blue-600 ring-offset-2'
+                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                            }
+                          `}
+                        >
+                          <div className={`mb-2 h-2 rounded bg-gradient-to-r ${template.color}`} />
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
                             {template.name}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                      <TabsContent value="modern" className="mt-2">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          简洁大方，适合科技公司
-                        </p>
-                      </TabsContent>
-                      <TabsContent value="classic" className="mt-2">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          正式严谨，适合传统行业
-                        </p>
-                      </TabsContent>
-                      <TabsContent value="creative" className="mt-2">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          独特个性，适合创意岗位
-                        </p>
-                      </TabsContent>
-                    </Tabs>
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            {template.description}
+                          </p>
+                          {selectedTemplate === template.id && (
+                            <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* 简历预览 */}
@@ -299,22 +360,45 @@ export default function ResumeOptimizer() {
                         selectedTemplate === 'creative' ? 'creative-template' : ''
                       }`}
                     >
+                      {/* 页眉：公司名称和Logo */}
                       {companyInfo && (
-                        <div className="mb-6 flex items-center justify-end gap-2 border-b pb-4">
+                        <div className="mb-6 flex items-center justify-end gap-3 border-b-2 pb-4">
                           <div className="text-right">
                             <div className="text-xl font-bold text-gray-900 dark:text-white">
                               {companyInfo.name}
                             </div>
+                            {companyInfo.website && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                {companyInfo.website}
+                              </div>
+                            )}
                           </div>
                           {companyInfo.logoUrl && (
                             <img
                               src={companyInfo.logoUrl}
                               alt={companyInfo.name}
-                              className="h-10 w-10 object-contain"
+                              className="h-12 w-12 object-contain"
                             />
                           )}
                         </div>
                       )}
+
+                      {/* 推荐原因 */}
+                      {recommendReason && (
+                        <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-blue-600" />
+                            <span className="font-semibold text-blue-900 dark:text-blue-100">
+                              AI 推荐理由
+                            </span>
+                          </div>
+                          <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
+                            {recommendReason}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 优化后的简历内容 */}
                       <div className="whitespace-pre-wrap">{optimizedResume}</div>
                     </div>
                   </div>

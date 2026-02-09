@@ -2,11 +2,11 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 
 export async function POST(request: NextRequest) {
-  const { resume, companyName, companyInfo } = await request.json();
+  const { resume, companyName, jobPosition, companyInfo } = await request.json();
 
-  if (!resume || !companyName) {
+  if (!resume || !companyName || !jobPosition) {
     return new Response(
-      JSON.stringify({ error: '请提供简历内容和公司名称' }),
+      JSON.stringify({ error: '请提供简历内容、公司名称和职位名称' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -18,24 +18,49 @@ export async function POST(request: NextRequest) {
   const config = new Config();
   const llmClient = new LLMClient(config);
 
-  // 构建系统提示词
-  const systemPrompt = `你是一位专业的简历优化专家。你的任务是帮助用户优化简历，使其更符合目标公司的要求。
+  // 第一步：生成推荐原因
+  const recommendPrompt = `你是一位专业的HR专家。请分析以下简历与目标职位的匹配度，提炼出3-5条推荐理由。
+
+目标公司：${companyName}
+应聘职位：${jobPosition}
+${companyInfo?.description ? `公司简介：${companyInfo.description}` : ''}
+
+简历内容：
+${resume}
+
+请按照以下格式输出推荐理由（每条50字以内，简洁有力）：
+1. [推荐理由1]
+2. [推荐理由2]
+3. [推荐理由3]
+...
+
+请直接输出推荐理由，不要包含其他说明。`;
+
+  const recommendMessages = [
+    { role: 'system' as const, content: '你是专业的HR专家，善于分析简历与职位的匹配度。' },
+    { role: 'user' as const, content: recommendPrompt },
+  ];
+
+  // 第二步：优化简历
+  const optimizePrompt = `你是一位专业的简历优化专家。你的任务是帮助用户优化简历，使其更符合目标公司和职位的要求。
 
 优化原则：
 1. 保持简历的真实性，不编造经历
 2. 使用更专业、更有力的词汇和表达
-3. 突出与目标公司岗位相关的技能和经验
+3. 突出与目标职位相关的技能和经验
 4. 优化简历结构和格式，使其更清晰易读
 5. 使用行为动词和量化数据增强说服力
 6. 优化后的简历应该更加精炼，去除冗余信息
+7. 简历第一行必须明确标注应聘的职位名称
 
 目标公司：${companyName}
+应聘职位：${jobPosition}
 ${companyInfo?.description ? `公司简介：${companyInfo.description}` : ''}
 
-请直接输出优化后的简历内容，不要包含其他说明或解释。`;
+请直接输出优化后的简历内容，简历第一行为职位名称（格式：应聘职位：${jobPosition}），不要包含其他说明或解释。`;
 
-  const messages = [
-    { role: 'system' as const, content: systemPrompt },
+  const optimizeMessages = [
+    { role: 'system' as const, content: optimizePrompt },
     { role: 'user' as const, content: resume },
   ];
 
@@ -45,16 +70,40 @@ ${companyInfo?.description ? `公司简介：${companyInfo.description}` : ''}
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const llmStream = llmClient.stream(messages, {
+        // 先发送推荐原因
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: 'stage', content: 'recommend' })}\n\n`)
+        );
+
+        const recommendStream = llmClient.stream(recommendMessages, {
           model: 'doubao-seed-1-8-251228',
           temperature: 0.7,
         });
 
-        for await (const chunk of llmStream) {
+        for await (const chunk of recommendStream) {
           if (chunk.content) {
             const content = chunk.content.toString();
             controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+              encoder.encode(`data: ${JSON.stringify({ type: 'recommend', content })}\n\n`)
+            );
+          }
+        }
+
+        // 然后发送优化后的简历
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: 'stage', content: 'resume' })}\n\n`)
+        );
+
+        const optimizeStream = llmClient.stream(optimizeMessages, {
+          model: 'doubao-seed-1-8-251228',
+          temperature: 0.7,
+        });
+
+        for await (const chunk of optimizeStream) {
+          if (chunk.content) {
+            const content = chunk.content.toString();
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'resume', content })}\n\n`)
             );
           }
         }
