@@ -112,16 +112,25 @@ export default function ResumeOptimizer() {
     setRecommendReason('');
 
     try {
-      // 先获取公司信息
+      // 先获取公司信息（失败也不影响流程）
       setIsLoadingCompany(true);
-      const companyRes = await fetch('/api/company-info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName }),
-      });
-      const companyData = await companyRes.json();
-      setCompanyInfo(companyData);
-      setIsLoadingCompany(false);
+      let companyData = null;
+      try {
+        const companyRes = await fetch('/api/company-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyName }),
+        });
+        if (companyRes.ok) {
+          companyData = await companyRes.json();
+          setCompanyInfo(companyData);
+        }
+      } catch (error) {
+        console.error('获取公司信息失败，将继续优化简历:', error);
+        // 即使获取公司信息失败，也继续流程
+      } finally {
+        setIsLoadingCompany(false);
+      }
 
       // 然后优化简历
       const resumeRes = await fetch('/api/optimize-resume', {
