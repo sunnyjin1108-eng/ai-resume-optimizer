@@ -275,13 +275,13 @@ export default function ResumeOptimizer() {
 
   const exportToImage = async () => {
     try {
-      const element = document.getElementById('resume-preview');
+      const element = document.getElementById('resume-content');
       if (!element) {
-        toast.error('未找到简历预览内容');
+        toast.error('未找到简历内容');
         return;
       }
 
-      toast.loading('正在生成图片，请稍候...');
+      const loadingId = toast.loading('正在生成图片，请稍候...');
 
       const html2canvas = (await import('html2canvas')).default;
 
@@ -317,7 +317,7 @@ export default function ResumeOptimizer() {
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
 
-      toast.success('图片导出成功！');
+      toast.success('图片导出成功！', { id: loadingId });
     } catch (error) {
       console.error('图片导出失败:', error);
       toast.error(`图片导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -326,17 +326,18 @@ export default function ResumeOptimizer() {
 
   const exportToPDF = async () => {
     try {
-      const element = document.getElementById('resume-preview');
+      const element = document.getElementById('resume-content');
       if (!element) {
-        toast.error('未找到简历预览内容');
+        toast.error('未找到简历内容');
         return;
       }
 
       // 显示加载提示
-      toast.loading('正在生成 PDF，请稍候...');
+      const loadingId = toast.loading('正在生成 PDF，请稍候...');
 
       const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
 
       // 滚动到顶部以确保完整截图
       window.scrollTo(0, 0);
@@ -354,7 +355,12 @@ export default function ResumeOptimizer() {
       });
 
       const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+      });
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
@@ -373,7 +379,7 @@ export default function ResumeOptimizer() {
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${fileName}.pdf`);
 
-      toast.success('PDF 导出成功！');
+      toast.success('PDF 导出成功！', { id: loadingId });
     } catch (error) {
       console.error('PDF 导出失败:', error);
       toast.error(`PDF 导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -382,41 +388,13 @@ export default function ResumeOptimizer() {
 
   const exportToWord = async () => {
     try {
-      const element = document.getElementById('resume-preview');
+      const element = document.getElementById('resume-content');
       if (!element) {
-        toast.error('未找到简历预览内容');
+        toast.error('未找到简历内容');
         return;
       }
 
-      toast.loading('正在生成 Word 文档，请稍候...');
-
-      // 提取内联样式和内容
-      const style = document.createElement('style');
-      style.textContent = `
-        body { font-family: 'Microsoft YaHei', '微软雅黑', 'SimHei', Arial, sans-serif; margin: 20px; }
-        .text-sm { font-size: 12px; }
-        .text-base { font-size: 14px; }
-        .font-bold { font-weight: bold; }
-        .font-semibold { font-weight: 600; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; }
-        .mb-6 { margin-bottom: 24px; }
-        .mt-4 { margin-top: 16px; }
-        .text-gray-700 { color: #374151; }
-        .text-gray-600 { color: #4b5563; }
-        .text-gray-500 { color: #6b7280; }
-        .border-b { border-bottom: 1px solid #e5e7eb; }
-        .border-t { border-top: 1px solid #e5e7eb; }
-        .py-2 { padding-top: 8px; padding-bottom: 8px; }
-        .py-3 { padding-top: 12px; padding-bottom: 12px; }
-        .flex { display: flex; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .gap-2 { gap: 8px; }
-        .w-1\\/2 { width: 50%; }
-        .break-all { word-break: break-all; }
-      `;
+      const loadingId = toast.loading('正在生成 Word 文档，请稍候...');
 
       // 提取简历信息用于命名
       const resumeInfo = extractResumeInfo(editedResume);
@@ -430,10 +408,88 @@ export default function ResumeOptimizer() {
         resumeInfo.age || '年龄',
       ].filter(Boolean).join('_');
 
+      // 提取内联样式和内容
+      const style = document.createElement('style');
+      style.textContent = `
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', '微软雅黑', 'SimHei', Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        h3 { font-size: 18px; font-weight: bold; margin-top: 24px; margin-bottom: 16px; border-bottom: 2px solid #d1d5db; padding-bottom: 8px; color: #111827; }
+        h4 { font-size: 16px; font-weight: 600; margin-top: 16px; margin-bottom: 8px; color: #111827; }
+        strong { font-weight: bold; color: #111827; }
+        div { margin-bottom: 8px; }
+        ul { margin-left: 24px; margin-bottom: 16px; }
+        li { margin-bottom: 4px; color: #374151; line-height: 1.6; }
+        p { margin-bottom: 12px; color: #374151; line-height: 1.6; }
+        span { color: #374151; }
+        .flex { display: flex; }
+        .items-baseline { align-items: baseline; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .flex-1 { flex: 1; }
+        .gap-2 { gap: 8px; }
+        .w-24 { width: 96px; }
+        .min-w-\\[120px\\] { min-width: 120px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mt-4 { margin-top: 16px; }
+        .mt-6 { margin-top: 24px; }
+        .py-2 { padding-top: 8px; padding-bottom: 8px; }
+        .py-3 { padding-top: 12px; padding-bottom: 12px; }
+        .px-4 { padding-left: 16px; padding-right: 16px; }
+        .pb-2 { padding-bottom: 8px; }
+        .pb-3 { padding-bottom: 12px; }
+        .pb-4 { padding-bottom: 16px; }
+        .ml-2 { margin-left: 8px; }
+        .ml-4 { margin-left: 16px; }
+        .ml-6 { margin-left: 24px; }
+        .mr-4 { margin-right: 16px; }
+        .mx-4 { margin-left: 16px; margin-right: 16px; }
+        .text-xs { font-size: 12px; }
+        .text-sm { font-size: 14px; }
+        .text-base { font-size: 16px; }
+        .text-lg { font-size: 18px; }
+        .text-xl { font-size: 20px; }
+        .text-3xl { font-size: 30px; }
+        .font-mono { font-family: monospace; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: bold; }
+        .text-gray-900 { color: #111827; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-300 { color: #d1d5db; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-blue-100 { background-color: #dbeafe; }
+        .bg-blue-800 { background-color: #1e40af; }
+        .bg-blue-900\\/30 { background-color: rgba(30, 58, 138, 0.3); }
+        .border-b-2 { border-bottom: 2px solid; }
+        .border-b { border-bottom: 1px solid; }
+        .border-t { border-top: 1px solid; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .border-gray-300 { border-color: #d1d5db; }
+        .rounded-lg { border-radius: 8px; }
+        .rounded-full { border-radius: 9999px; }
+        .p-3 { padding: 12px; }
+        .p-4 { padding: 16px; }
+        .leading-relaxed { line-height: 1.625; }
+        .whitespace-pre-wrap { white-space: pre-wrap; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .space-y-2 > * + * { margin-top: 8px; }
+        .max-w-none { max-width: none; }
+        .from-purple-50 { background-color: #faf5ff; }
+        .to-pink-50 { background-color: #fdf2f8; }
+        .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+        .list-disc { list-style-type: disc; }
+      `;
+
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-        <head><meta charset='utf-8'><title>简历</title></head>
-        <body>${style.outerHTML}${element.innerHTML}</body>
+        <head><meta charset='utf-8'><title>简历</title>${style.outerHTML}</head>
+        <body>${element.innerHTML}</body>
         </html>
       `;
 
@@ -447,7 +503,7 @@ export default function ResumeOptimizer() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast.success('Word 文档导出成功！');
+      toast.success('Word 文档导出成功！', { id: loadingId });
     } catch (error) {
       console.error('Word 导出失败:', error);
       toast.error(`Word 导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -727,6 +783,7 @@ ${editedResume}
 
                         {/* 优化后的简历内容 */}
                         <div
+                          id="resume-content"
                           className="prose max-w-none dark:prose-invert"
                           dangerouslySetInnerHTML={{ __html: parseResumeToHTML(editedResume) }}
                         />
