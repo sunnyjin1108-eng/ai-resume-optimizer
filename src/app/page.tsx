@@ -429,9 +429,9 @@ export default function ResumeOptimizer() {
         return;
       }
 
-      const element = document.getElementById('resume-content');
+      const element = document.getElementById('resume-preview');
       if (!element) {
-        console.error('未找到 resume-content 元素');
+        console.error('未找到 resume-preview 元素');
         toast.error('未找到简历内容');
         return;
       }
@@ -498,6 +498,7 @@ export default function ResumeOptimizer() {
         .mb-3 { margin-bottom: 12px; }
         .mb-4 { margin-bottom: 16px; }
         .mb-6 { margin-bottom: 24px; }
+        .mt-2 { margin-top: 8px; }
         .mt-4 { margin-top: 16px; }
         .mt-6 { margin-top: 24px; }
         .py-2 { padding-top: 8px; padding-bottom: 8px; }
@@ -516,6 +517,7 @@ export default function ResumeOptimizer() {
         .text-base { font-size: 16px; }
         .text-lg { font-size: 18px; }
         .text-xl { font-size: 20px; }
+        .text-2xl { font-size: 24px; }
         .text-3xl { font-size: 30px; }
         .font-mono { font-family: 'Courier New', monospace; }
         .font-semibold { font-weight: 600; }
@@ -526,18 +528,32 @@ export default function ResumeOptimizer() {
         .text-gray-500 { color: #6b7280; }
         .text-gray-400 { color: #9ca3af; }
         .text-gray-300 { color: #d1d5db; }
+        .text-gray-200 { color: #e5e7eb; }
+        .text-gray-100 { color: #f3f4f6; }
+        .text-blue-600 { color: #2563eb; }
+        .text-blue-900 { color: #1e3a8a; }
+        .text-blue-100 { color: #dbeafe; }
+        .text-blue-800 { color: #1e40af; }
+        .text-orange-600 { color: #ea580c; }
+        .text-orange-900 { color: #7c2d12; }
+        .text-green-600 { color: #16a34a; }
+        .text-green-900 { color: #14532d; }
         .bg-gray-50 { background-color: #f9fafb; }
+        .bg-blue-50 { background-color: #eff6ff; }
         .bg-blue-100 { background-color: #dbeafe; }
         .bg-blue-800 { background-color: #1e40af; color: #ffffff; }
-        .bg-blue-900\\/30 { background-color: rgba(30, 58, 138, 0.3); }
-        .border-b-2 { border-bottom: 2px solid #e5e7eb; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .bg-green-50 { background-color: #f0fdf4; }
+        .bg-blue-950\\/30 { background-color: rgba(30, 58, 138, 0.3); }
+        .bg-orange-950\\/30 { background-color: rgba(124, 45, 18, 0.3); }
+        .bg-green-950\\/30 { background-color: rgba(20, 83, 45, 0.3); }
+        .border-b-2 { border-bottom: 2px solid #d1d5db; }
         .border-b { border-bottom: 1px solid #e5e7eb; }
         .border-t { border-top: 1px solid #e5e7eb; }
         .border-gray-200 { border-color: #e5e7eb; }
         .border-gray-300 { border-color: #d1d5db; }
         .rounded-lg { border-radius: 8px; }
         .rounded-full { border-radius: 9999px; }
-        .p-3 { padding: 12px; }
         .p-4 { padding: 16px; }
         .leading-relaxed { line-height: 1.625; }
         .whitespace-pre-wrap { white-space: pre-wrap; }
@@ -548,6 +564,8 @@ export default function ResumeOptimizer() {
         .to-pink-50 { background-color: #fdf2f8; }
         .bg-gradient-to-r { background: linear-gradient(to right, #faf5ff, #fdf2f8); }
         .list-disc { list-style-type: disc; }
+        .h-4 { height: 16px; }
+        .w-4 { width: 16px; }
       `;
 
       const htmlContent = `
