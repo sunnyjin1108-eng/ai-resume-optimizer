@@ -430,26 +430,12 @@ ${editedResume}
                           selectedTemplate === 'creative' ? 'creative-template' : ''
                         }`}
                       >
-                        {/* 页眉：公司名称和Logo */}
+                        {/* 页眉：公司名称 */}
                         {companyInfo && (
-                          <div className="mb-6 flex items-center justify-end gap-3 border-b-2 pb-4">
-                            <div className="text-right">
-                              <div className="text-xl font-bold text-gray-900 dark:text-white">
-                                {companyInfo.name}
-                              </div>
-                              {companyInfo.website && (
-                                <div className="text-xs text-gray-600 dark:text-gray-400">
-                                  {companyInfo.website}
-                                </div>
-                              )}
+                          <div className="mb-6 flex items-center justify-end border-b-2 pb-4">
+                            <div className="text-xl font-bold text-gray-900 dark:text-white">
+                              {companyInfo.name}
                             </div>
-                            {companyInfo.logoUrl && (
-                              <img
-                                src={companyInfo.logoUrl}
-                                alt={companyInfo.name}
-                                className="h-12 w-12 object-contain"
-                              />
-                            )}
                           </div>
                         )}
 
