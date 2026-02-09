@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, Image as ImageIcon, Loader2, Sparkles, Save } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon, Loader2, Sparkles, Save, Edit2, Eye } from 'lucide-react';
 
 
 interface CompanyInfo {
@@ -28,6 +28,8 @@ export default function ResumeOptimizer() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isLoadingCompany, setIsLoadingCompany] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedResume, setEditedResume] = useState('');
 
   const templates = [
     {
@@ -133,6 +135,11 @@ export default function ResumeOptimizer() {
           }
         }
       }
+
+      // 优化完成后，初始化编辑内容
+      if (optimizedText) {
+        setEditedResume(optimizedText);
+      }
     } catch (error) {
       console.error('优化失败:', error);
       alert('简历优化失败，请重试');
@@ -195,7 +202,7 @@ export default function ResumeOptimizer() {
   };
 
   const saveResume = async () => {
-    if (!optimizedResume || !companyName) {
+    if (!editedResume || !companyName) {
       alert('请先优化简历');
       return;
     }
@@ -211,7 +218,7 @@ ${recommendReason ? `\n=== AI 推荐理由 ===\n${recommendReason}\n` : ''}
 ${'=' * 50}
 
 === 优化后的简历 ===
-${optimizedResume}
+${editedResume}
       `.trim();
 
       const response = await fetch('/api/save-resume', {
@@ -366,57 +373,105 @@ ${optimizedResume}
                     </div>
                   </div>
 
+                  {/* 编辑/预览模式切换 */}
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <Label className="text-base font-semibold">简历内容</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={!isEditMode ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setIsEditMode(false)}
+                        className={!isEditMode ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        预览模式
+                      </Button>
+                      <Button
+                        variant={isEditMode ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                        className={isEditMode ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                      >
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        编辑模式
+                      </Button>
+                    </div>
+                  </div>
+
                   {/* 简历预览 */}
                   <div className="overflow-y-auto rounded-lg border bg-white p-6 dark:bg-gray-800">
-                    <div
-                      id="resume-preview"
-                      className={`prose max-w-none dark:prose-invert ${
-                        selectedTemplate === 'modern' ? 'modern-template' : ''
-                      } ${selectedTemplate === 'classic' ? 'classic-template' : ''} ${
-                        selectedTemplate === 'creative' ? 'creative-template' : ''
-                      }`}
-                    >
-                      {/* 页眉：公司名称和Logo */}
-                      {companyInfo && (
-                        <div className="mb-6 flex items-center justify-end gap-3 border-b-2 pb-4">
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-gray-900 dark:text-white">
-                              {companyInfo.name}
-                            </div>
-                            {companyInfo.website && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400">
-                                {companyInfo.website}
+                    {isEditMode ? (
+                      /* 编辑模式 */
+                      <div className="space-y-4">
+                        <div className="rounded-lg border bg-gray-50 p-4 dark:bg-gray-900">
+                          <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            💡 提示：您可以直接编辑简历内容，修改后点击导出即可使用
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            • 第一行为职位名称，请保持格式：应聘职位：xxx<br/>
+                            • 推荐原因已在上方固定显示<br/>
+                            • 可自由修改和补充内容
+                          </p>
+                        </div>
+                        <Textarea
+                          value={editedResume}
+                          onChange={(e) => setEditedResume(e.target.value)}
+                          placeholder="在此编辑简历内容..."
+                          className="min-h-[500px] resize-none font-mono text-sm"
+                        />
+                      </div>
+                    ) : (
+                      /* 预览模式 */
+                      <div
+                        id="resume-preview"
+                        className={`prose max-w-none dark:prose-invert ${
+                          selectedTemplate === 'modern' ? 'modern-template' : ''
+                        } ${selectedTemplate === 'classic' ? 'classic-template' : ''} ${
+                          selectedTemplate === 'creative' ? 'creative-template' : ''
+                        }`}
+                      >
+                        {/* 页眉：公司名称和Logo */}
+                        {companyInfo && (
+                          <div className="mb-6 flex items-center justify-end gap-3 border-b-2 pb-4">
+                            <div className="text-right">
+                              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                                {companyInfo.name}
                               </div>
+                              {companyInfo.website && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  {companyInfo.website}
+                                </div>
+                              )}
+                            </div>
+                            {companyInfo.logoUrl && (
+                              <img
+                                src={companyInfo.logoUrl}
+                                alt={companyInfo.name}
+                                className="h-12 w-12 object-contain"
+                              />
                             )}
                           </div>
-                          {companyInfo.logoUrl && (
-                            <img
-                              src={companyInfo.logoUrl}
-                              alt={companyInfo.name}
-                              className="h-12 w-12 object-contain"
-                            />
-                          )}
-                        </div>
-                      )}
+                        )}
 
-                      {/* 推荐原因 */}
-                      {recommendReason && (
-                        <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-600" />
-                            <span className="font-semibold text-blue-900 dark:text-blue-100">
-                              AI 推荐理由
-                            </span>
+                        {/* 推荐原因 */}
+                        {recommendReason && (
+                          <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
+                            <div className="mb-2 flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-blue-600" />
+                              <span className="font-semibold text-blue-900 dark:text-blue-100">
+                                AI 推荐理由
+                              </span>
+                            </div>
+                            <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
+                              {recommendReason}
+                            </div>
                           </div>
-                          <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
-                            {recommendReason}
-                          </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* 优化后的简历内容 */}
-                      <div className="whitespace-pre-wrap">{optimizedResume}</div>
-                    </div>
+                        {/* 优化后的简历内容 */}
+                        <div className="whitespace-pre-wrap">{editedResume}</div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 导出按钮 */}
