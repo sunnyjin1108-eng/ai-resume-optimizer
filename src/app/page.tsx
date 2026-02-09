@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, Image as ImageIcon, Loader2, Sparkles, Save, Edit2, Eye } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 
 
 interface CompanyInfo {
@@ -30,6 +29,26 @@ export default function ResumeOptimizer() {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedResume, setEditedResume] = useState('');
+
+  // 解析简历内容为HTML
+  const parseResumeToHTML = (resume: string) => {
+    return resume
+      // 转换一级标题 (## 一、xxx)
+      .replace(/^##\s+(.+)$/gm, '<h3 class="text-xl font-bold mt-6 mb-3 text-gray-900 dark:text-white border-b border-gray-300 pb-2">$1</h3>')
+      // 转换二级标题 (### xxx)
+      .replace(/^###\s+(.+)$/gm, '<h4 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">$1</h4>')
+      // 转换列表项 (- xxx)
+      .replace(/^-\s+(.+)$/gm, '<li class="ml-6 text-gray-700 dark:text-gray-300 mb-1">$1</li>')
+      // 转换多行列表项为列表
+      .replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul class="list-disc mb-4">$&</ul>')
+      // 转换粗体 (**xxx**)
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      // 转换换行为段落
+      .replace(/\n\n+/g, '</p><p class="mb-3 text-gray-700 dark:text-gray-300">')
+      // 包裹整个内容
+      .replace(/^(?!<)/, '<p class="mb-3 text-gray-700 dark:text-gray-300">')
+      .replace(/(?<!>)$/, '</p>');
+  };
 
   const handleOptimize = async () => {
     if (!resume.trim() || !companyName.trim() || !jobPosition.trim()) {
@@ -409,9 +428,10 @@ ${editedResume}
                         )}
 
                         {/* 优化后的简历内容 */}
-                        <div className="prose max-w-none dark:prose-invert">
-                          <ReactMarkdown>{editedResume}</ReactMarkdown>
-                        </div>
+                        <div 
+                          className="prose max-w-none dark:prose-invert"
+                          dangerouslySetInnerHTML={{ __html: parseResumeToHTML(editedResume) }}
+                        />
                       </div>
                     )}
                   </div>
