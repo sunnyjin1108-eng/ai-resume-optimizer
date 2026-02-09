@@ -24,6 +24,8 @@ export default function ResumeOptimizer() {
   const [jobPosition, setJobPosition] = useState('');
   const [optimizedResume, setOptimizedResume] = useState('');
   const [recommendReason, setRecommendReason] = useState('');
+  const [riskTips, setRiskTips] = useState('');
+  const [interviewQuestions, setInterviewQuestions] = useState('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isLoadingCompany, setIsLoadingCompany] = useState(false);
@@ -106,6 +108,56 @@ export default function ResumeOptimizer() {
     return html;
   };
 
+  // 从简历中提取关键信息用于导出命名
+  const extractResumeInfo = (resume: string) => {
+    const info = {
+      name: '',
+      recentCompany: '',
+      recentPosition: '',
+      highestEducation: '',
+      gender: '',
+      age: '',
+    };
+
+    // 提取姓名
+    const nameMatch = resume.match(/(?:姓名[:：]\s*)([^\n]+)/);
+    if (nameMatch) {
+      info.name = nameMatch[1].trim();
+    }
+
+    // 提取性别
+    const genderMatch = resume.match(/(?:性别[:：]\s*)([^\n]+)/);
+    if (genderMatch) {
+      info.gender = genderMatch[1].trim();
+    }
+
+    // 提取年龄
+    const ageMatch = resume.match(/(?:年龄[:：]\s*)([^\n]+)/);
+    if (ageMatch) {
+      info.age = ageMatch[1].trim();
+    }
+
+    // 提取最高学历
+    const educationMatch = resume.match(/(?:学历[:：]\s*)([^\n]+)/);
+    if (educationMatch) {
+      info.highestEducation = educationMatch[1].trim();
+    }
+
+    // 提取最近的公司和职位（查找工作经历中的第一个）
+    const workSectionMatch = resume.match(/(?:##\s*三、工作经历|###\s*工作经历)([\s\S]*?)(?:##\s*|$)/);
+    if (workSectionMatch) {
+      const workSection = workSectionMatch[1];
+      // 提取第一个工作经历
+      const firstWorkMatch = workSection.match(/\*\*([^*]+)\*\*\s*\|\s*\*\*([^*]+)\*\*/);
+      if (firstWorkMatch) {
+        info.recentCompany = firstWorkMatch[1].trim();
+        info.recentPosition = firstWorkMatch[2].trim();
+      }
+    }
+
+    return info;
+  };
+
   const handleOptimize = async () => {
     if (!resume.trim() || !companyName.trim() || !jobPosition.trim()) {
       alert('请输入简历内容、目标公司名称和应聘职位');
@@ -153,6 +205,8 @@ export default function ResumeOptimizer() {
       const decoder = new TextDecoder();
       let optimizedText = '';
       let reasonText = '';
+      let riskText = '';
+      let interviewText = '';
       let currentStage = 'recommend';
 
       if (reader) {
@@ -186,6 +240,12 @@ export default function ResumeOptimizer() {
                   } else if (currentStage === 'resume') {
                     optimizedText += data.content;
                     setOptimizedResume(optimizedText);
+                  } else if (currentStage === 'risk') {
+                    riskText += data.content;
+                    setRiskTips(riskText);
+                  } else if (currentStage === 'interview') {
+                    interviewText += data.content;
+                    setInterviewQuestions(interviewText);
                   }
                 }
               } catch (parseError) {
@@ -236,8 +296,20 @@ export default function ResumeOptimizer() {
         scrollY: 0,
       });
 
+      // 提取简历信息用于命名
+      const resumeInfo = extractResumeInfo(editedResume);
+      const fileName = [
+        jobPosition || '应聘职位',
+        resumeInfo.name || '姓名',
+        resumeInfo.recentCompany || '公司',
+        resumeInfo.recentPosition || '职位',
+        resumeInfo.highestEducation || '学历',
+        resumeInfo.gender || '性别',
+        resumeInfo.age || '年龄',
+      ].filter(Boolean).join('_');
+
       const link = document.createElement('a');
-      link.download = `resume_${companyName}_优化版.png`;
+      link.download = `${fileName}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
 
@@ -282,8 +354,20 @@ export default function ResumeOptimizer() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
+      // 提取简历信息用于命名
+      const resumeInfo = extractResumeInfo(editedResume);
+      const fileName = [
+        jobPosition || '应聘职位',
+        resumeInfo.name || '姓名',
+        resumeInfo.recentCompany || '公司',
+        resumeInfo.recentPosition || '职位',
+        resumeInfo.highestEducation || '学历',
+        resumeInfo.gender || '性别',
+        resumeInfo.age || '年龄',
+      ].filter(Boolean).join('_');
+
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`resume_${companyName}_优化版.pdf`);
+      pdf.save(`${fileName}.pdf`);
 
       toast.success('PDF 导出成功！');
     } catch (error) {
@@ -305,7 +389,7 @@ export default function ResumeOptimizer() {
       // 提取内联样式和内容
       const style = document.createElement('style');
       style.textContent = `
-        body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; margin: 20px; }
+        body { font-family: 'Microsoft YaHei', '微软雅黑', 'SimHei', Arial, sans-serif; margin: 20px; }
         .text-sm { font-size: 12px; }
         .text-base { font-size: 14px; }
         .font-bold { font-weight: bold; }
@@ -330,6 +414,18 @@ export default function ResumeOptimizer() {
         .break-all { word-break: break-all; }
       `;
 
+      // 提取简历信息用于命名
+      const resumeInfo = extractResumeInfo(editedResume);
+      const fileName = [
+        jobPosition || '应聘职位',
+        resumeInfo.name || '姓名',
+        resumeInfo.recentCompany || '公司',
+        resumeInfo.recentPosition || '职位',
+        resumeInfo.highestEducation || '学历',
+        resumeInfo.gender || '性别',
+        resumeInfo.age || '年龄',
+      ].filter(Boolean).join('_');
+
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
         <head><meta charset='utf-8'><title>简历</title></head>
@@ -342,7 +438,7 @@ export default function ResumeOptimizer() {
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `resume_${companyName}_优化版.doc`;
+      link.download = `${fileName}.doc`;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
@@ -586,8 +682,36 @@ ${editedResume}
                           </div>
                         )}
 
+                        {riskTips && (
+                          <div className="mb-6 rounded-lg bg-orange-50 p-4 dark:bg-orange-950/30">
+                            <div className="mb-2 flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-orange-600" />
+                              <span className="font-semibold text-orange-900 dark:text-orange-100">
+                                风险提示
+                              </span>
+                            </div>
+                            <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
+                              {riskTips}
+                            </div>
+                          </div>
+                        )}
+
+                        {interviewQuestions && (
+                          <div className="mb-6 rounded-lg bg-green-50 p-4 dark:bg-green-950/30">
+                            <div className="mb-2 flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-green-600" />
+                              <span className="font-semibold text-green-900 dark:text-green-100">
+                                面试提问建议
+                              </span>
+                            </div>
+                            <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
+                              {interviewQuestions}
+                            </div>
+                          </div>
+                        )}
+
                         {/* 优化后的简历内容 */}
-                        <div 
+                        <div
                           className="prose max-w-none dark:prose-invert"
                           dangerouslySetInnerHTML={{ __html: parseResumeToHTML(editedResume) }}
                         />
