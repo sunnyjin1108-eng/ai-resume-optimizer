@@ -53,9 +53,16 @@ export default function ResumeOptimizer() {
         '<span class="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">$4</span>' +
       '</div>');
 
-    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）- 支持多行内容，保持原样
+    // 特殊处理项目经验头部：**[项目名称]** | **[时间段]**
+    html = html.replace(/^\*\*([^\*|]+)\*\*\s*\|\s*\*\*([^\*]+)\*\*$/gm, 
+      '<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200 dark:border-gray-700">' +
+        '<span class="text-lg font-bold text-gray-900 dark:text-white">$1</span>' +
+        '<span class="text-sm font-semibold text-gray-600 dark:text-gray-400 font-mono">$2</span>' +
+      '</div>');
+
+    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）- 支持多行内容，保持原样，使用空行分隔
     html = html.replace(/^(项目描述|主要贡献|项目成果)：([\s\S]*?)(?=\n(?:项目描述|主要贡献|项目成果)：|\n##|\n\*\*|$)/gm, 
-      '<div class="flex items-start mb-3">' +
+      '<div class="flex items-start mb-4">' +
         '<span class="w-24 flex-shrink-0 font-semibold text-gray-700 dark:text-gray-300">$1：</span>' +
         '<span class="flex-1 text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap">$2</span>' +
       '</div>');
