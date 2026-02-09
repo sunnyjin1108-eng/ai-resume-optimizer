@@ -53,11 +53,11 @@ export default function ResumeOptimizer() {
         '<span class="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">$4</span>' +
       '</div>');
 
-    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）
-    html = html.replace(/^(项目描述|主要贡献|项目成果)：(.+)$/gm, 
+    // 特殊处理项目经验标注（项目描述、主要贡献、项目成果）- 支持多行内容，保持原样
+    html = html.replace(/^(项目描述|主要贡献|项目成果)：([\s\S]*?)(?=\n(?:项目描述|主要贡献|项目成果)：|\n##|\n\*\*|$)/gm, 
       '<div class="flex items-start mb-3">' +
         '<span class="w-24 flex-shrink-0 font-semibold text-gray-700 dark:text-gray-300">$1：</span>' +
-        '<span class="flex-1 text-gray-900 dark:text-white leading-relaxed">$2</span>' +
+        '<span class="flex-1 text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap">$2</span>' +
       '</div>');
 
     // 特殊处理专业技能：**技能类别**：具体技能
