@@ -439,6 +439,15 @@ ${editedResume}
                           </div>
                         )}
 
+                        {/* 应聘职位 - 左上角第一段 */}
+                        {jobPosition && (
+                          <div className="mb-4">
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                              应聘职位：{jobPosition}
+                            </div>
+                          </div>
+                        )}
+
                         {/* 推荐原因 */}
                         {recommendReason && (
                           <div className="mb-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/30">
