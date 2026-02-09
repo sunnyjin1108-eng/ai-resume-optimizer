@@ -277,11 +277,19 @@ export default function ResumeOptimizer() {
 
   const exportToImage = async () => {
     try {
+      if (!editedResume) {
+        toast.error('请先优化简历');
+        return;
+      }
+
       const element = document.getElementById('resume-content');
       if (!element) {
+        console.error('未找到 resume-content 元素');
         toast.error('未找到简历内容');
         return;
       }
+
+      console.log('开始导出图片，元素内容长度:', element.innerHTML.length);
 
       const loadingId = toast.loading('正在生成图片，请稍候...');
 
@@ -289,18 +297,25 @@ export default function ResumeOptimizer() {
 
       // 滚动到顶部以确保完整截图
       window.scrollTo(0, 0);
+      await new Promise(resolve => setTimeout(resolve, 300)); // 等待滚动完成
+
+      console.log('开始调用 html2canvas');
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
         backgroundColor: '#ffffff',
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
         scrollX: 0,
         scrollY: 0,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
+
+      console.log('html2canvas 完成，canvas尺寸:', canvas.width, 'x', canvas.height);
 
       // 提取简历信息用于命名
       const resumeInfo = extractResumeInfo(editedResume);
@@ -317,7 +332,9 @@ export default function ResumeOptimizer() {
       const link = document.createElement('a');
       link.download = `${fileName}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
 
       toast.success('图片导出成功！', { id: loadingId });
     } catch (error) {
@@ -328,13 +345,20 @@ export default function ResumeOptimizer() {
 
   const exportToPDF = async () => {
     try {
+      if (!editedResume) {
+        toast.error('请先优化简历');
+        return;
+      }
+
       const element = document.getElementById('resume-content');
       if (!element) {
+        console.error('未找到 resume-content 元素');
         toast.error('未找到简历内容');
         return;
       }
 
-      // 显示加载提示
+      console.log('开始导出PDF，元素内容长度:', element.innerHTML.length);
+
       const loadingId = toast.loading('正在生成 PDF，请稍候...');
 
       const html2canvas = (await import('html2canvas')).default;
@@ -343,18 +367,25 @@ export default function ResumeOptimizer() {
 
       // 滚动到顶部以确保完整截图
       window.scrollTo(0, 0);
+      await new Promise(resolve => setTimeout(resolve, 300)); // 等待滚动完成
+
+      console.log('开始调用 html2canvas');
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
         backgroundColor: '#ffffff',
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
         scrollX: 0,
         scrollY: 0,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
+
+      console.log('html2canvas 完成，canvas尺寸:', canvas.width, 'x', canvas.height);
 
       const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
@@ -365,6 +396,8 @@ export default function ResumeOptimizer() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      console.log('PDF尺寸:', pdfWidth, 'x', pdfHeight);
 
       // 提取简历信息用于命名
       const resumeInfo = extractResumeInfo(editedResume);
@@ -381,6 +414,7 @@ export default function ResumeOptimizer() {
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${fileName}.pdf`);
 
+      console.log('PDF保存成功');
       toast.success('PDF 导出成功！', { id: loadingId });
     } catch (error) {
       console.error('PDF 导出失败:', error);
@@ -390,11 +424,19 @@ export default function ResumeOptimizer() {
 
   const exportToWord = async () => {
     try {
+      if (!editedResume) {
+        toast.error('请先优化简历');
+        return;
+      }
+
       const element = document.getElementById('resume-content');
       if (!element) {
+        console.error('未找到 resume-content 元素');
         toast.error('未找到简历内容');
         return;
       }
+
+      console.log('开始导出Word，元素内容长度:', element.innerHTML.length);
 
       const loadingId = toast.loading('正在生成 Word 文档，请稍候...');
 
@@ -414,9 +456,29 @@ export default function ResumeOptimizer() {
       const style = document.createElement('style');
       style.textContent = `
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Microsoft YaHei', '微软雅黑', 'SimHei', Arial, sans-serif; margin: 20px; line-height: 1.6; }
-        h3 { font-size: 18px; font-weight: bold; margin-top: 24px; margin-bottom: 16px; border-bottom: 2px solid #d1d5db; padding-bottom: 8px; color: #111827; }
-        h4 { font-size: 16px; font-weight: 600; margin-top: 16px; margin-bottom: 8px; color: #111827; }
+        body {
+          font-family: 'Microsoft YaHei', '微软雅黑', 'SimHei', Arial, sans-serif;
+          margin: 20px;
+          line-height: 1.6;
+          color: #111827;
+          background-color: #ffffff;
+        }
+        h3 {
+          font-size: 18px;
+          font-weight: bold;
+          margin-top: 24px;
+          margin-bottom: 16px;
+          border-bottom: 2px solid #d1d5db;
+          padding-bottom: 8px;
+          color: #111827;
+        }
+        h4 {
+          font-size: 16px;
+          font-weight: 600;
+          margin-top: 16px;
+          margin-bottom: 8px;
+          color: #111827;
+        }
         strong { font-weight: bold; color: #111827; }
         div { margin-bottom: 8px; }
         ul { margin-left: 24px; margin-bottom: 16px; }
@@ -455,7 +517,7 @@ export default function ResumeOptimizer() {
         .text-lg { font-size: 18px; }
         .text-xl { font-size: 20px; }
         .text-3xl { font-size: 30px; }
-        .font-mono { font-family: monospace; }
+        .font-mono { font-family: 'Courier New', monospace; }
         .font-semibold { font-weight: 600; }
         .font-bold { font-weight: bold; }
         .text-gray-900 { color: #111827; }
@@ -466,11 +528,11 @@ export default function ResumeOptimizer() {
         .text-gray-300 { color: #d1d5db; }
         .bg-gray-50 { background-color: #f9fafb; }
         .bg-blue-100 { background-color: #dbeafe; }
-        .bg-blue-800 { background-color: #1e40af; }
+        .bg-blue-800 { background-color: #1e40af; color: #ffffff; }
         .bg-blue-900\\/30 { background-color: rgba(30, 58, 138, 0.3); }
-        .border-b-2 { border-bottom: 2px solid; }
-        .border-b { border-bottom: 1px solid; }
-        .border-t { border-top: 1px solid; }
+        .border-b-2 { border-bottom: 2px solid #e5e7eb; }
+        .border-b { border-bottom: 1px solid #e5e7eb; }
+        .border-t { border-top: 1px solid #e5e7eb; }
         .border-gray-200 { border-color: #e5e7eb; }
         .border-gray-300 { border-color: #d1d5db; }
         .rounded-lg { border-radius: 8px; }
@@ -484,13 +546,17 @@ export default function ResumeOptimizer() {
         .max-w-none { max-width: none; }
         .from-purple-50 { background-color: #faf5ff; }
         .to-pink-50 { background-color: #fdf2f8; }
-        .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+        .bg-gradient-to-r { background: linear-gradient(to right, #faf5ff, #fdf2f8); }
         .list-disc { list-style-type: disc; }
       `;
 
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-        <head><meta charset='utf-8'><title>简历</title>${style.outerHTML}</head>
+        <head>
+          <meta charset='utf-8'>
+          <title>简历</title>
+          ${style.outerHTML}
+        </head>
         <body>${element.innerHTML}</body>
         </html>
       `;
@@ -502,9 +568,12 @@ export default function ResumeOptimizer() {
       const link = document.createElement('a');
       link.download = `${fileName}.doc`;
       link.href = url;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      console.log('Word保存成功');
       toast.success('Word 文档导出成功！', { id: loadingId });
     } catch (error) {
       console.error('Word 导出失败:', error);
